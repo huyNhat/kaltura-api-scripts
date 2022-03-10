@@ -1,29 +1,31 @@
 #@huy 
 #feb 25, 2022
-#v.0.1
+#v.0.1.2
 
 from asyncio.windows_events import NULL
 from KalturaClient import *
 from KalturaClient.Plugins.Core import *
 from KalturaClient.Plugins.Metadata import *
 from pprint import pprint
-import time,datetime,logging
-import secret
+import time,datetime,logging,math
+import secret.secretTest as key
 
-#setting log file
-logging.basicConfig(filename="kaltura-update-logs",
+#Setting log file
+logging.basicConfig(filename="logs/test-custom-schema",
                             filemode='a',
-                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                            datefmt='%H:%M:%S',
-                            level=logging.DEBUG)
+                            format='%(asctime)s,%(message)s',
+                            datefmt='%d-%b-%y,%H:%M:%S',
+                            level=logging.INFO)
 
-#kaltura session
-partner_id = secret.partner_id
-partner_admin_secret = secret.partner_admin_secret
+#Establish Kaltura session
+partner_id = key.partner_id
+partner_admin_secret = key.partner_admin_secret
 user_id=""
 config = KalturaConfiguration(partner_id)
-config.serviceUrl = "https://admin.video.ubc.ca/"
-client = KalturaClient(config)
+config.serviceUrl = key.serviceUrl
+client = KalturaClient(config) 
+
+#Can extend the expiry lentgh here by specifying expiry higher than 24 hours
 ks = client.session.start(
       partner_admin_secret,
       user_id,
@@ -31,154 +33,109 @@ ks = client.session.start(
       partner_id)
 client.setKs(ks)
 
+#session = ""
+#pprint(client.session.get(session).expiry)
+
 #Filter subset of entries
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
-#filter.userIdEqual = "nguyenh" #filter by user
-#filter.idEqual ="0_1efr20tb"
-#set list to be empty
+#filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
+filter.userIdEqual = "nguyenh" #multiple users->userIdIn
+filter.idEqual ="0_vhdtw6gm"
+
+#Set list to be empty
 result = None
 
-
-
-#Getting Custom Metatdata
-#metaDataDC= KalturaMetadataProfile()
-#metaDataDC.metadataObjectType= KalturaMetadataObjectType.ENTRY
-
-#filterEntry= KalturaMetadataFilter()
-#filterEntry.metadataProfileIdEqual =788
-#filterEntry.objectIdEqual = "0_1ny5byxr"
-#metaDataPlugIn= KalturaMetadataClientPlugin.get(client)
-
-
-'''
-for obj in resultForMetaData.objects:
-    pprint(vars(obj))
-'''
-#set global intiial page =1    
+#Set global intial page =1 and count=0   
 numPage= 1
-count=0
+pageSize= 500 #assume max is 5 instead of 500 with a max entries retrieved is 100
+totalEntriesProcess=0
+totalNumOfSubsetEntries=0
+maxCount = 10000 # assume max is 100 instead of 10000 |max entries can be retrieved at a time
+loopCount= 0   
+lastProcessedCreatedAt=0 #keeping track of last CreatedAt
 
-#get data per page
+def getTotalCount():
+    totalCount= client.media.count(filter)
+    return totalCount
+
+
+def getTotalOfPages():
+    totalCount= getTotalCount()
+    return math.ceil(totalCount/pageSize) #round up
+
+#Get data per page
 def getDatabyPage():
     pager = KalturaFilterPager()
-    pager.pageSize = 100 #max is 500
+    pager.pageSize = pageSize
     pager.pageIndex = numPage
-    result = client.media.list(filter, pager)
+    result = client.media.list(filter,pager)
     return result
 
-#####function to add tags#####
-def updateEntries(entry_id,curentTags):
-    updateTag=KalturaMediaEntry()
-    updateTag.tags = curentTags + ",migrate"
-    client.media.update(entry_id,updateTag)
-
-######function to add OCreationDate and OLastPlayedDate#####******
-def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate):
-    metadata_profile_id = 788
-    xmlData = '<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OLastPlayedDate>'+str(OLastPlayedDate)+'</OLastPlayedDate></metadata>'
-    metadataObjectType= KalturaMetadataObjectType.ENTRY
-
-    filterEntry= KalturaMetadataFilter()
-    #filterEntry.metadataProfileIdEqual =788
-    filterEntry.objectIdEqual = entry_id
-    #check to see if meta data exists:
-    metaData= client.metadata.metadata.list(filterEntry).objects
-    checked= False
-    for obj in metaData:
-        pprint(vars(obj))
-        if(obj.metadataProfileId == metadata_profile_id):
-            checked= True
-            metadata_profile_id = obj.id
-    
-    if (checked == True):
-        client.metadata.metadata.update(metadata_profile_id, xmlData)
-    else:
-        client.metadata.metadata.add(metadata_profile_id,metadataObjectType,entry_id,xmlData)
-
-#updateOCDandOLPD("0_1efr20tb",1588316400,1588316400)
+#Delete Entries
+def deleteEntries(entryId):
+    client.media.delete(entryId)
 
 
-
-
-#process data:
+#Process data:
 def doDataProcess(result):
-    global count
+    global totalEntriesProcess,lastProcessedCreatedAt,totalNumOfSubsetEntries
     for obj in result.objects:
         try:
-            if obj.createdAt >= 1588316400 or obj.lastPlayedAt >= 1588316400:
-            #if  "migrate" in obj.tags:
-                count += 1 #counting entries that are matched with criteria
-                #print(obj.id + " by " + obj.userId + " " +obj.tags)
-                print(obj.id + " has tags: "+ obj.tags)
-                #print(datetime.datetime.fromtimestamp(obj.createdAt).strftime('%Y-%m-%d %H:%M:%S'))
-                #print(datetime.datetime.fromtimestamp(obj.lastPlayedAt).strftime('%Y-%m-%d %H:%M:%S'))
-                #pprint(vars(obj))
-                #updateEntries(obj.id,obj.tags) #add tags
-                #logging.info(obj.id + " has been assigned with a tag")
-                #adding creation and lastplayed to custom fields
-                #updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt)
-                #logging.info(obj.id + " has been assigned with its orginal and last played dates")
-        except:
-            ####Add 0 for entries DONT HAVE LASTPLAYED DATE
-            #updateOCDandOLPD(obj.id,obj.createdAt,0)
-            #logging.info(obj.id + " has been assigned with its orginal and NO last played date")
+            totalNumOfSubsetEntries += 1
+            if(obj.lastPlayedAt is not None and obj.plays is not None):
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
 
-            print("error")
-            #logging.error(obj.id + " has errors")
+                #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
+            else:
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+            totalEntriesProcess += 1
+            #keep track of the last process entry's createdAt
+            lastProcessedCreatedAt = obj.createdAt
+ 
+        except Exception as Argument:
+            logging.error(str(Argument))
 
+def main():
+    global numPage, filter, lastProcessedCreatedAt, loopCount
 
-#action: execuate each list 
-while(numPage <5):
-    result = getDatabyPage()
-    doDataProcess(result)
-    #sleep for 15mins (900)
-    time.sleep(10)
-    numPage = numPage + 1
+    numOfOuterLoop = math.ceil((getTotalCount()/maxCount)) #round up
+    print("numOfOuterLoop is:" +str(numOfOuterLoop))
 
-print("final count is :" +str(count))
+    while(loopCount <= numOfOuterLoop):
+        #Recheck totalCount to only process the next 10K of entries
+        print("current total count is: "+str(getTotalCount()))
+        numOfInnerLoop =  math.ceil(getTotalCount()/pageSize)
+        if (numOfInnerLoop >= 20): #20 is max loop for page size of 500
+            numOfInnerLoop = 20
+        else:
+            numOfInnerLoop = numOfInnerLoop
 
+        while(numPage <= numOfInnerLoop): # 5 x 20 = 100 entries
+            result = getDatabyPage()
+            doDataProcess(result)
+            #sleep for 5 seconds
+            time.sleep(5)
+            numPage += 1
+        print("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
+        #Re-generate the new list starting from the lastProcessedCreatedAt
+        try:
+            filter.createdAtGreaterThanOrEqual = lastProcessedCreatedAt
+        except Exception as Argument:
+            logging.error(str(Argument))
+        #Reset the paging
+        numPage = 1        
+        #increase the count for outter loop
+        loopCount += 1
+        print("current loop count is: "+str(loopCount))
+    
+    #print("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
+    #logging.info("Final count is :" +str(count))
+    logging.info("Num of entries processed: " +str(totalEntriesProcess))
+    logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
+    print("Final count is :" +str(totalEntriesProcess))
+    
 
-
-
-#Filter by me only
-'''
-filter.userIdEqual = "nguyenh"
-filter.idEqual ="0_dptb9hvu"
-filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_DESC
-'''
-'''
-pager = KalturaFilterPager()
-numPage= 1
-pager.pageSize = 10
-pager.pageIndex = numPage
-
-'''
-
-
-'''
-while(numPage <4):
-    #execute batches
-    for obj in result.objects:
-        #pprint(vars(obj))
-        print(obj.creatorId)
-        print(obj.id)
-        count=count+1
-
-    print(count)
-    #sleep for 15mins (900 secs)
-    time.sleep(15)
-    #Execute next batch
-    numPage = numPage + 1
-    print(numPage)
-    #Re-generate the list with new page
-
-    result = client.media.list(filter, pager)
-
-#0_2aqwtlj5
-
-
-#updateEntries(obj.id)
-#updateEntries(entry_id,updateTag)
-
-'''
+if __name__ == "__main__":
+    main()

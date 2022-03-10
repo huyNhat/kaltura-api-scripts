@@ -10,15 +10,11 @@ import time,datetime,logging,math
 import secret.secretTest as key
 
 #Setting log file
-logging.basicConfig(filename="test-get-all-entries-log-1",
+logging.basicConfig(filename="logs/test-get-all-entries-log-2",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
                             level=logging.INFO)
-
-                            #%(name)s %(levelname)s
-
-
 
 #Establish Kaltura session
 partner_id = key.partner_id
