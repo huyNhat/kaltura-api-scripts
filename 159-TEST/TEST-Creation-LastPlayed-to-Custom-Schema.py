@@ -51,14 +51,13 @@ numPage= 1
 pageSize= 500 #assume max is 5 instead of 500 with a max entries retrieved is 100
 totalEntriesProcess=0
 totalNumOfSubsetEntries=0
-maxCount = 10000 # assume max is 100 instead of 10000 |max entries can be retrieved at a time
+maxCount = 10000 # assume max is 100 instead of 10000 | max entries can be retrieved at a time
 loopCount= 0   
 lastProcessedCreatedAt=0 #keeping track of last CreatedAt
 
 def getTotalCount():
     totalCount= client.media.count(filter)
     return totalCount
-
 
 def getTotalOfPages():
     totalCount= getTotalCount()
@@ -176,5 +175,5 @@ def main():
     
 
 if __name__ == "__main__":
-    #main()
-     getMetaData()
+    main()
+    #getMetaData()
