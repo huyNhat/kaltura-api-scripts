@@ -101,6 +101,17 @@ def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate):
         else:
             client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlData)
 
+#For Testing purposes:
+def getMetaData():
+    metadata_pid = key.metadata_profile_id
+    metadataObjectType= KalturaMetadataObjectType.ENTRY
+    filterEntry= KalturaMetadataFilter()
+    filterEntry.objectIdEqual = "0_lxezfr94"
+    metaData= client.metadata.metadata.list(filterEntry)
+    for obj in metaData.objects:
+        pprint(vars(obj))
+
+
 
 #Process data:
 def doDataProcess(result):
@@ -110,12 +121,12 @@ def doDataProcess(result):
             totalNumOfSubsetEntries += 1
             if(obj.lastPlayedAt is not None and obj.plays is not None):
                 print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
-                updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt)
+                #updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt)
 
                 #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
             else:
                 print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
-                updateOCDandOLPD(obj.id,obj.createdAt,NULL)
+                #updateOCDandOLPD(obj.id,obj.createdAt,NULL)
                 #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
             totalEntriesProcess += 1
             #keep track of the last process entry's createdAt
@@ -165,4 +176,5 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    #main()
+     getMetaData()

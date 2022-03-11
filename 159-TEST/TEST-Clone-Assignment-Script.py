@@ -7,7 +7,7 @@ from KalturaClient.Plugins.Core import *
 from KalturaClient.Plugins.Metadata import *
 from pprint import pprint
 import time,datetime,logging,math
-import secretTest
+import secret.secretTest as key
 
 #Setting log file
 logging.basicConfig(filename="test-clone-assignment-log-1",
@@ -21,11 +21,11 @@ logging.basicConfig(filename="test-clone-assignment-log-1",
 
 
 #Establish Kaltura session
-partner_id = secretTest.partner_id
-partner_admin_secret = secretTest.partner_admin_secret
+partner_id = key.partner_id
+partner_admin_secret = key.partner_admin_secret
 user_id=""
 config = KalturaConfiguration(partner_id)
-config.serviceUrl = secretTest.serviceUrl
+config.serviceUrl = key.serviceUrl
 client = KalturaClient(config) 
 
 #Can extend the expiry lentgh here by specifying expiry higher than 24 hours
