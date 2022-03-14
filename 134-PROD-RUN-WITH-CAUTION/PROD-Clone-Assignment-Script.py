@@ -35,7 +35,7 @@ client.setKs(ks)
 #Filter subset of entries
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
-#filter.userIdEqual = "test_bb_stu_assignment" #multiple users->userIdIn
+filter.userIdEqual = "nguyenh" #multiple users->userIdIn
 #filter.idEqual ="0_1efr20tb"
 
 #Set list to be empty
@@ -75,10 +75,10 @@ def doDataProcess(result):
             if "_assignment" in obj.userId:
                 totalNumOfSubsetEntries += 1
                 if(obj.lastPlayedAt is not None and obj.plays is not None):
-                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
+                    #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
                     logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
                 else:
-                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                    #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
                     logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
             totalEntriesProcess += 1
             #keep track of the last process entry's createdAt

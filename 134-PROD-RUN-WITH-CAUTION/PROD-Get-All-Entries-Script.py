@@ -2,16 +2,15 @@
 #feb 25, 2022
 #v.0.1.2
 
-from asyncio.windows_events import NULL
 from KalturaClient import *
 from KalturaClient.Plugins.Core import *
 from KalturaClient.Plugins.Metadata import *
 from pprint import pprint
 import time,datetime,logging,math
-import secret.secretTest as key
+import secret.secretProd as key
 
 #Setting log file
-logging.basicConfig(filename="logs/test-custom-schema",
+logging.basicConfig(filename="logs/kaltura-prod-all-entries-log-1",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -20,7 +19,7 @@ logging.basicConfig(filename="logs/test-custom-schema",
 #Establish Kaltura session
 partner_id = key.partner_id
 partner_admin_secret = key.partner_admin_secret
-user_id= ""
+user_id=""
 config = KalturaConfiguration(partner_id)
 config.serviceUrl = key.serviceUrl
 client = KalturaClient(config) 
@@ -33,25 +32,21 @@ ks = client.session.start(
       partner_id)
 client.setKs(ks)
 
-#session = ""
-#pprint(client.session.get(session).expiry)
-
 #Filter subset of entries
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
-#filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
-filter.userIdEqual = "nguyenh" #multiple users->userIdIn
-filter.idEqual ="0_vhdtw6gm"
+#filter.userIdEqual = "nguyenh" #multiple users->userIdIn
+#filter.idEqual ="0_1efr20tb"
 
 #Set list to be empty
 result = None
 
 #Set global intial page =1 and count=0   
 numPage= 1
-pageSize= 500 #assume max is 5 instead of 500 with a max entries retrieved is 100
+pageSize= 500 #Max is  500 with a max entries retrieved is 10000
 totalEntriesProcess=0
 totalNumOfSubsetEntries=0
-maxCount = 10000 # assume max is 100 instead of 10000 |max entries can be retrieved at a time
+maxCount = 10000 #  max is 10000 |max entries can be retrieved at a time
 loopCount= 0   
 lastProcessedCreatedAt=0 #keeping track of last CreatedAt
 
@@ -72,11 +67,6 @@ def getDatabyPage():
     result = client.media.list(filter,pager)
     return result
 
-#Delete Entries
-def deleteEntries(entryId):
-    client.media.delete(entryId)
-
-
 #Process data:
 def doDataProcess(result):
     global totalEntriesProcess,lastProcessedCreatedAt,totalNumOfSubsetEntries
@@ -84,11 +74,11 @@ def doDataProcess(result):
         try:
             totalNumOfSubsetEntries += 1
             if(obj.lastPlayedAt is not None and obj.plays is not None):
-                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
-                #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
+                #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
+                logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
             else:
-                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
-                #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
             totalEntriesProcess += 1
             #keep track of the last process entry's createdAt
             lastProcessedCreatedAt = obj.createdAt
@@ -118,6 +108,8 @@ def main():
             time.sleep(5)
             numPage += 1
         print("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
+        logging.info("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
+
         #Re-generate the new list starting from the lastProcessedCreatedAt
         try:
             filter.createdAtGreaterThanOrEqual = lastProcessedCreatedAt
@@ -138,3 +130,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #print(getTotalCount())
