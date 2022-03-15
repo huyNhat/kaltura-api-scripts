@@ -18,7 +18,7 @@ logging.basicConfig(filename="logs/kaltura-prod-subset-logs-1",
 
 #Parameters
 customTagName = "keep2022"
-cutoffDate = 1588316400
+cutoffDate = 1588316400 #may 01, 2022 midnight
 
 
 #Establish Kaltura session
@@ -143,5 +143,5 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
-    #print(getTotalCount())
+    #main()
+    print(getTotalCount())

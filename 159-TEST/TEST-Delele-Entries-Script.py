@@ -11,7 +11,7 @@ import time,datetime,logging,math
 import secret.secretTest as key
 
 #Setting log file
-logging.basicConfig(filename="logs/test-custom-schema",
+logging.basicConfig(filename="logs/test-delete-entries-logs-1",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
