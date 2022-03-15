@@ -23,7 +23,7 @@ partner_admin_secret = key.partner_admin_secret
 user_id=""
 config = KalturaConfiguration(partner_id)
 config.serviceUrl = key.serviceUrl
-client = KalturaClient(config) 
+client = KalturaClient(config)
 
 #Can extend the expiry lentgh here by specifying expiry higher than 24 hours
 ks = client.session.start(
