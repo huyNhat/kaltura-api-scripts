@@ -9,6 +9,7 @@ from KalturaClient.Plugins.Metadata import *
 from pprint import pprint
 import time,datetime,logging,math
 import secret.secretTest as key
+import pandas as pd
 
 #Setting log file
 logging.basicConfig(filename="logs/test-delete-entries-logs-1",
@@ -134,7 +135,17 @@ def main():
     logging.info("Num of entries processed: " +str(totalEntriesProcess))
     logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
     print("Final count is :" +str(totalEntriesProcess))
-    
+
+def processCSV():
+    df = pd.read_csv('sample-entry-ids.csv')
+    for index, row in df.iterrows():
+        try:
+            deleteEntries(row['entryID'])
+            print("entryID#: "+ row['entryID']+ 'has been deleted')
+            logging.info("entryID#: "+ row['entryID']+ 'has been deleted')
+        except Exception as Argument:
+            logging.error(row['entryID']+ str(Argument))
 
 if __name__ == "__main__":
-    main()
+    processCSV()
+
