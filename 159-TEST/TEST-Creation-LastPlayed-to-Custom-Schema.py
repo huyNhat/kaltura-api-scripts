@@ -11,7 +11,7 @@ import time,datetime,logging,math
 import secret.secretTest as key
 
 #Setting log file
-logging.basicConfig(filename="logs/test-custom-schema",
+logging.basicConfig(filename="logs/test-custom-schema-logs-1",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -40,7 +40,7 @@ client.setKs(ks)
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
 #filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
-filter.userIdEqual = "nguyenh" #multiple users->userIdIn
+filter.userIdEqual = "kimi" #multiple users->userIdIn
 #filter.idEqual ="0_vhdtw6gm"
 
 #Set list to be empty
@@ -72,11 +72,19 @@ def getDatabyPage():
     return result
 
 #Add OCreationDate and OLastPlayedDate
-def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate):
+def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate, OPlays):
     metadata_pid = key.metadata_profile_id
+    xmlData =""
+    if(OLastPlayedDate != NULL and OPlays != NULL):
+        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OLastPlayedDate>'+str(OLastPlayedDate)+'</OLastPlayedDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
+    elif(OLastPlayedDate == NULL and OPlays >=0):
+        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
+    else:
+        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate></metadata>'
+    '''
     xmlData = '<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OLastPlayedDate>'+str(OLastPlayedDate)+'</OLastPlayedDate></metadata>'
     xmlDataWithNoLastPlayed='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate></metadata>'
-
+    '''
     metadataObjectType= KalturaMetadataObjectType.ENTRY
     filterEntry= KalturaMetadataFilter()
     filterEntry.objectIdEqual = entry_id
@@ -89,6 +97,12 @@ def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate):
             checked= True
             metadata_pid = obj.id
     
+    if(checked == True):
+        client.metadata.metadata.update(metadata_pid, xmlData)
+    else:
+        client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlData)
+
+    '''
     if (checked == True):
         if(OLastPlayedDate == NULL):
             client.metadata.metadata.update(metadata_pid, xmlDataWithNoLastPlayed)
@@ -99,6 +113,7 @@ def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate):
             client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlDataWithNoLastPlayed)
         else:
             client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlData)
+    '''
 
 #For Testing purposes:
 def getMetaData():
@@ -109,6 +124,18 @@ def getMetaData():
     metaData= client.metadata.metadata.list(filterEntry)
     for obj in metaData.objects:
         pprint(vars(obj))
+ 
+def testing(entry_id,OCreationDate,OLastPlayedDate, OPlays): 
+    xmlData =""
+    if(OLastPlayedDate != NULL and OPlays != NULL):
+        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OLastPlayedDate>'+str(OLastPlayedDate)+'</OLastPlayedDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
+    elif(OLastPlayedDate == NULL and OPlays >=0):
+        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
+    else:
+        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate></metadata>'
+    print (xmlData)
+
+    
 
 
 
@@ -117,14 +144,23 @@ def doDataProcess(result):
     global totalEntriesProcess,lastProcessedCreatedAt,totalNumOfSubsetEntries
     for obj in result.objects:
         try:
-            totalNumOfSubsetEntries += 1
+            #totalNumOfSubsetEntries += 1
             if(obj.lastPlayedAt is not None and obj.plays is not None):
                 print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
-                #updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt)
-
+                #testing(obj.id,obj.createdAt,obj.lastPlayedAt,obj.plays)
+                updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt,obj.plays)
                 #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
             else:
-                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                #Store OPlays if not Null
+                if(obj.plays is not None):
+                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null"+ ","+str(obj.plays))
+                    updateOCDandOLPD(obj.id,obj.createdAt,NULL,obj.plays)
+                    #testing(obj.id,obj.createdAt,NULL,obj.plays)
+
+                else:
+                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                    #testing(obj.id,obj.createdAt,NULL,NULL)
+                    updateOCDandOLPD(obj.id,obj.createdAt,NULL,NULL)
                 #updateOCDandOLPD(obj.id,obj.createdAt,NULL)
                 #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
             totalEntriesProcess += 1
@@ -132,7 +168,7 @@ def doDataProcess(result):
             lastProcessedCreatedAt = obj.createdAt
  
         except Exception as Argument:
-            logging.error(str(Argument))
+            logging.error(str(obj.id)+","+str(Argument))
 
 def main():
     global numPage, filter, lastProcessedCreatedAt, loopCount
@@ -170,8 +206,8 @@ def main():
     #print("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
     #logging.info("Final count is :" +str(count))
     logging.info("Num of entries processed: " +str(totalEntriesProcess))
-    logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
-    print("Final count is :" +str(totalEntriesProcess))
+    #logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
+    print("Num of entries processed :" +str(totalEntriesProcess))
     
 
 if __name__ == "__main__":

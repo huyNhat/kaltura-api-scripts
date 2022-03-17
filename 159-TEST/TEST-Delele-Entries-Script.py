@@ -42,7 +42,7 @@ filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
 #filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
 filter.userIdEqual = "nguyenh" #multiple users->userIdIn
-filter.idEqual ="0_vhdtw6gm"
+#filter.idEqual ="0_vhdtw6gm"
 
 #Set list to be empty
 result = None
@@ -136,11 +136,16 @@ def main():
     logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
     print("Final count is :" +str(totalEntriesProcess))
 
+
+filePath='sample-entry-ids.csv'
+
+#Adding chunksize here: https://www.chrislettieri.com/the-best-way-to-read-a-large-csv-file-in-python/#:~:text=%20Four%20ways%20to%20read%20a%20large%20CSV,but%20has%20the%20best%20performance%2C%20assuming...%20More%20
+
 def processCSV():
-    df = pd.read_csv('sample-entry-ids.csv')
+    df = pd.read_csv(filePath)
     for index, row in df.iterrows():
         try:
-            deleteEntries(row['entryID'])
+            #deleteEntries(row['entryID'])
             print("entryID#: "+ row['entryID']+ 'has been deleted')
             logging.info("entryID#: "+ row['entryID']+ 'has been deleted')
         except Exception as Argument:
