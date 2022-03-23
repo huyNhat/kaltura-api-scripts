@@ -9,8 +9,12 @@ from pprint import pprint
 import time,datetime,logging,math
 import secret.secretProd as key
 
+#Parameters
+customTagName = "keep2022"
+cutoffDate = 1588316400 #may 01, 2020 midnight
+
 #Setting log file
-logging.basicConfig(filename="kaltura-prod-subset-log-1",
+logging.basicConfig(filename="logs/kaltura-prod-subset-log-2",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -35,7 +39,7 @@ client.setKs(ks)
 #Filter subset of entries
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
-filter.userIdEqual = "nguyenh" #multiple users->userIdIn
+#filter.userIdEqual = "nguyenh" #multiple users->userIdIn
 #filter.idEqual ="0_1efr20tb"
 
 #Set list to be empty
@@ -72,7 +76,7 @@ def doDataProcess(result):
     global totalEntriesProcess,lastProcessedCreatedAt,totalNumOfSubsetEntries
     for obj in result.objects:
         try:
-            if "_assignment" in obj.userId:
+            if "_assignment" in obj.userId and obj.createdAt <= cutoffDate:
                 totalNumOfSubsetEntries += 1
                 if(obj.lastPlayedAt is not None and obj.plays is not None):
                     #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))

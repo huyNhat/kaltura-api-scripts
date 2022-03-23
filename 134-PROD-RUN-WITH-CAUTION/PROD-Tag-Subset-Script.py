@@ -18,7 +18,7 @@ logging.basicConfig(filename="logs/kaltura-prod-subset-logs-1",
 
 #Parameters
 customTagName = "keep2022"
-cutoffDate = 1588316400 #may 01, 2022 midnight
+cutoffDate = 1588316400 #may 01, 2020 midnight
 
 
 #Establish Kaltura session
