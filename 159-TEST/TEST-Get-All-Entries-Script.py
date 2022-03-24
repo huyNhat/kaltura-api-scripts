@@ -10,7 +10,7 @@ import time,datetime,logging,math
 import secret.secretTest as key
 
 #Setting log file
-logging.basicConfig(filename="logs/test-get-all-entries-log-2",
+logging.basicConfig(filename="logs/test-get-all-entries-log-3",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -38,6 +38,7 @@ client.setKs(ks)
 #Filter subset of entries
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
+filter.statusEqual = KalturaEntryStatus.DELETED #filter by deleted entry
 #filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
 #filter.userIdEqual = "nguyenh" #multiple users->userIdIn
 #filter.idEqual ="0_1efr20tb"
@@ -83,6 +84,22 @@ def doDataProcess(result):
     global totalEntriesProcess,lastProcessedCreatedAt,totalNumOfSubsetEntries
     for obj in result.objects:
         try:
+
+            totalEntriesProcess += 1
+            pprint(vars(obj.status))
+             #keep track of the last process entry's createdAt
+            lastProcessedCreatedAt = obj.createdAt
+            '''
+            if(obj.lastPlayedAt is not None and obj.plays is not None):
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
+                logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
+            else:
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+            #keep track of the last process entry's createdAt
+            lastProcessedCreatedAt = obj.createdAt
+            '''
+            '''
             if "_assignment" in obj.userId:
                 totalNumOfSubsetEntries += 1
                 if(obj.lastPlayedAt is not None and obj.plays is not None):
@@ -94,6 +111,7 @@ def doDataProcess(result):
             totalEntriesProcess += 1
             #keep track of the last process entry's createdAt
             lastProcessedCreatedAt = obj.createdAt
+            '''
  
         except Exception as Argument:
             logging.error(str(Argument))
@@ -140,6 +158,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #print(getTotalCount())
 
 
 

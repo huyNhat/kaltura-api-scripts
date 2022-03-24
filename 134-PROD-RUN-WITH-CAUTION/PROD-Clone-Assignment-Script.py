@@ -113,7 +113,7 @@ def main():
             time.sleep(5)
             numPage += 1
         print("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
-        logging.info("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
+        #logging.info("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
 
         #Re-generate the new list starting from the lastProcessedCreatedAt
         try:

@@ -7,11 +7,11 @@ from KalturaClient.Plugins.Core import *
 from KalturaClient.Plugins.Metadata import *
 from pprint import pprint
 import time,logging,math,os,glob
-import secret.secretTest as key
+import secret.secretProd as key
 import pandas as pd
 
 #Setting log file
-logging.basicConfig(filename="../logs/test-delete-entries-logs-4",
+logging.basicConfig(filename="../logs/prod-delete-entries-logs-smoke-test",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -33,31 +33,38 @@ ks = client.session.start(
       partner_id)
 client.setKs(ks)
 
-#Delete Entry
-def deleteEntries(entryId):
-    try:
-        result = client.media.delete(entryId)
-        logging.info(entryId + ' has been deleted')
-    except Exception as Argument:
-        logging.error(entryId +","+ str(Argument))
-
 # use glob to get all the csv files in the folder
 # First go to the "files" folder
 os.chdir("files" )
 path = os.getcwd()
 csv_files = glob.glob(os.path.join(path, "*.csv"))
+#counter
+count = 0
+
+#Delete Entry
+def deleteEntries(entryId):
+    global count
+    try:
+        result = client.media.delete(entryId)
+        count += 1
+        logging.info(entryId + ' has been deleted')
+    except Exception as Argument:
+        logging.error(entryId +","+ str(Argument))
 
 def processCSV():
     for f in csv_files:
+        global count
         print("Processing: "+ f)
         df = pd.read_csv(f)
         for index, row in df.iterrows():
-            deleteEntries(row['entryID'])
+            print(row['entryId'])
+            deleteEntries(row['entryId'])
         #sleep for 10 secs
         time.sleep(10)
 
 def main():
     processCSV()
+    logging.info("num of deleted entries: " + str(count))
 
 if __name__ == "__main__":
     main()
