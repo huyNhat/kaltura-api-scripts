@@ -1,8 +1,7 @@
 #@huy 
 #feb 25, 2022
-#v.0.1.3
+#v.0.1.2
 
-from asyncio.windows_events import NULL
 from KalturaClient import *
 from KalturaClient.Plugins.Core import *
 from KalturaClient.Plugins.Metadata import *
@@ -11,7 +10,7 @@ import time,datetime,logging,math
 import secret.secretProd as key
 
 #Setting log file
-logging.basicConfig(filename="logs/prod-custom-schema-logs-2",
+logging.basicConfig(filename="logs/test-get-all-entries-log-3",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -23,7 +22,7 @@ partner_admin_secret = key.partner_admin_secret
 user_id=""
 config = KalturaConfiguration(partner_id)
 config.serviceUrl = key.serviceUrl
-client = KalturaClient(config)
+client = KalturaClient(config) 
 
 #Can extend the expiry lentgh here by specifying expiry higher than 24 hours
 ks = client.session.start(
@@ -39,9 +38,10 @@ client.setKs(ks)
 #Filter subset of entries
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
+filter.statusEqual = KalturaEntryStatus.DELETED #filter by deleted entry
 #filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
-filter.userIdEqual = "batrak" #multiple users->userIdIn
-#filter.idEqual ="0_vhdtw6gm"
+#filter.userIdEqual = "nguyenh" #multiple users->userIdIn
+#filter.idEqual ="0_1efr20tb"
 
 #Set list to be empty
 result = None
@@ -51,13 +51,14 @@ numPage= 1
 pageSize= 500 #assume max is 5 instead of 500 with a max entries retrieved is 100
 totalEntriesProcess=0
 totalNumOfSubsetEntries=0
-maxCount = 10000 # assume max is 100 instead of 10000 | max entries can be retrieved at a time
+maxCount = 10000 # assume max is 100 instead of 10000 |max entries can be retrieved at a time
 loopCount= 0   
 lastProcessedCreatedAt=0 #keeping track of last CreatedAt
 
 def getTotalCount():
     totalCount= client.media.count(filter)
     return totalCount
+
 
 def getTotalOfPages():
     totalCount= getTotalCount()
@@ -71,74 +72,42 @@ def getDatabyPage():
     result = client.media.list(filter,pager)
     return result
 
-#Add OCreationDate and OLastPlayedDate
-def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate, OPlays):
-    metadata_pid = key.metadata_profile_id
-    xmlData =""
-    if(OLastPlayedDate != NULL and OPlays != NULL):
-        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OLastPlayedDate>'+str(OLastPlayedDate)+'</OLastPlayedDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
-    elif(OLastPlayedDate == NULL and OPlays >=0):
-        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
-    else:
-        xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate></metadata>'
-
-    metadataObjectType= KalturaMetadataObjectType.ENTRY
-    filterEntry= KalturaMetadataFilter()
-    filterEntry.objectIdEqual = entry_id
-    #check to see if meta data exists:
-    metaData= client.metadata.metadata.list(filterEntry)
-    checked= False
-    for obj in metaData.objects:
-        #pprint(vars(obj))
-        if(obj.metadataProfileId == metadata_pid):
-            checked= True
-            metadata_pid = obj.id
-    try:
-        if(checked == True):
-            client.metadata.metadata.update(metadata_pid, xmlData)
-            logging.info(entry_id+ " has been updated with a new custom schema")
-        else:
-            client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlData)
-            logging.info(entry_id + " has been assigned a custom schema") 
-    except Exception as Argument:
-            logging.error(str(entry_id)+","+str(Argument))
-
-#For Testing purposes:
-def getMetaData():
-    metadata_pid = key.metadata_profile_id
-    metadataObjectType= KalturaMetadataObjectType.ENTRY
-    filterEntry= KalturaMetadataFilter()
-    filterEntry.objectIdEqual = "0_lxezfr94"
-    metaData= client.metadata.metadata.list(filterEntry)
-    for obj in metaData.objects:
-        pprint(vars(obj))
- 
 #Process data:
 def doDataProcess(result):
     global totalEntriesProcess,lastProcessedCreatedAt,totalNumOfSubsetEntries
     for obj in result.objects:
         try:
-            #totalNumOfSubsetEntries += 1
+
+            totalEntriesProcess += 1
+            pprint(vars(obj.status))
+             #keep track of the last process entry's createdAt
+            lastProcessedCreatedAt = obj.createdAt
+            '''
             if(obj.lastPlayedAt is not None and obj.plays is not None):
-                #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
-                #testing(obj.id,obj.createdAt,obj.lastPlayedAt,obj.plays)
-                updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt,obj.plays) 
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
+                logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
             else:
-                #Store OPlays if not Null
-                if(obj.plays is not None):
-                    #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null"+ ","+str(obj.plays))
-                    updateOCDandOLPD(obj.id,obj.createdAt,NULL,obj.plays)
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+            #keep track of the last process entry's createdAt
+            lastProcessedCreatedAt = obj.createdAt
+            '''
+            '''
+            if "_assignment" in obj.userId:
+                totalNumOfSubsetEntries += 1
+                if(obj.lastPlayedAt is not None and obj.plays is not None):
+                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
+                    logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays)) 
                 else:
-                    #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
-                    updateOCDandOLPD(obj.id,obj.createdAt,NULL,NULL)
-                #updateOCDandOLPD(obj.id,obj.createdAt,NULL)
-                #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                    logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
             totalEntriesProcess += 1
             #keep track of the last process entry's createdAt
             lastProcessedCreatedAt = obj.createdAt
+            '''
  
         except Exception as Argument:
-            logging.error(str(obj.id)+","+str(Argument))
+            logging.error(str(Argument))
 
 def main():
     global numPage, filter, lastProcessedCreatedAt, loopCount
@@ -176,10 +145,10 @@ def main():
     #print("lastProcessedCreatedAt is: "+ str(lastProcessedCreatedAt))
     #logging.info("Final count is :" +str(count))
     logging.info("Num of entries processed: " +str(totalEntriesProcess))
-    #logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
-    print("Num of entries processed :" +str(totalEntriesProcess))
+    logging.info("Num of subset entries processed: " +str(totalNumOfSubsetEntries))
+    print("Final count is :" +str(totalEntriesProcess))
     
 
 if __name__ == "__main__":
     main()
-    #print(str(getTotalCount()))
+    #print(getTotalCount())
