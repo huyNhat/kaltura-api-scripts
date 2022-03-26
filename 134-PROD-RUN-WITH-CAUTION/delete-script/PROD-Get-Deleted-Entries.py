@@ -10,7 +10,7 @@ import time,datetime,logging,math
 import secret.secretProd as key
 
 #Setting log file
-logging.basicConfig(filename="logs/test-get-all-entries-log-3",
+logging.basicConfig(filename="../logs/prod-get-deleted-entries-log-1",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -79,7 +79,8 @@ def doDataProcess(result):
         try:
 
             totalEntriesProcess += 1
-            pprint(vars(obj.status))
+            print(str(obj.id) + ","+ str(obj.userId)+"," +obj.status.value)
+            #pprint(vars(obj))
              #keep track of the last process entry's createdAt
             lastProcessedCreatedAt = obj.createdAt
             '''

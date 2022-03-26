@@ -1,6 +1,6 @@
 import pandas as pd
 
-FILE_PATH ='sample-entries-from-lms.csv'
+FILE_PATH ='_assignment-entries-in-PROD-1.csv'
 chunk_size = 500 #500
 batch_no = 1
 

@@ -11,7 +11,7 @@ import secret.secretProd as key
 import pandas as pd
 
 #Setting log file
-logging.basicConfig(filename="../logs/prod-delete-entries-logs-smoke-test",
+logging.basicConfig(filename="../logs/prod-delete-entries-logs-1",
                             filemode='a',
                             format='%(asctime)s,%(message)s',
                             datefmt='%d-%b-%y,%H:%M:%S',
@@ -26,6 +26,7 @@ config.serviceUrl = key.serviceUrl
 client = KalturaClient(config) 
 
 #Can extend the expiry lentgh here by specifying expiry higher than 24 hours
+
 ks = client.session.start(
       partner_admin_secret,
       user_id,
@@ -33,13 +34,15 @@ ks = client.session.start(
       partner_id)
 client.setKs(ks)
 
+
 # use glob to get all the csv files in the folder
 # First go to the "files" folder
 os.chdir("files" )
 path = os.getcwd()
 csv_files = glob.glob(os.path.join(path, "*.csv"))
 #counter
-count = 0
+count = 1
+
 
 #Delete Entry
 def deleteEntries(entryId):
@@ -47,20 +50,20 @@ def deleteEntries(entryId):
     try:
         result = client.media.delete(entryId)
         count += 1
-        logging.info(entryId + ' has been deleted')
+        logging.info(entryId + ', has been deleted')
     except Exception as Argument:
         logging.error(entryId +","+ str(Argument))
 
+
 def processCSV():
     for f in csv_files:
-        global count
         print("Processing: "+ f)
         df = pd.read_csv(f)
         for index, row in df.iterrows():
-            print(row['entryId'])
+            #print(str(count)+ ":" +row['entryId'])
             deleteEntries(row['entryId'])
-        #sleep for 10 secs
-        time.sleep(10)
+            #sleep for 1 sec between each request
+            time.sleep(1)
 
 def main():
     processCSV()

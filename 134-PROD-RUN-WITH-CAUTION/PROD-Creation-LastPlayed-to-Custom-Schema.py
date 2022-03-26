@@ -40,8 +40,8 @@ client.setKs(ks)
 filter = KalturaMediaEntryFilter()
 filter.orderBy = KalturaMediaEntryOrderBy.CREATED_AT_ASC #sort ascending
 #filter.createdAtGreaterThanOrEqual = 1514793600 #before the first video in KMC
-filter.userIdEqual = "batrak" #multiple users->userIdIn
-#filter.idEqual ="0_vhdtw6gm"
+filter.userIdEqual = "nguyenh" #multiple users->userIdIn
+filter.idEqual ="0_9ntue2if"
 
 #Set list to be empty
 result = None
@@ -73,7 +73,10 @@ def getDatabyPage():
 
 #Add OCreationDate and OLastPlayedDate
 def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate, OPlays):
+
+    print(entry_id+","+OCreationDate+","+OLastPlayedDate+","+OPlays)
     metadata_pid = key.metadata_profile_id
+    '''
     xmlData =""
     if(OLastPlayedDate != NULL and OPlays != NULL):
         xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OLastPlayedDate>'+str(OLastPlayedDate)+'</OLastPlayedDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
@@ -81,6 +84,10 @@ def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate, OPlays):
         xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate><OPlays>'+str(OPlays) +'</OPlays></metadata>'
     else:
         xmlData='<metadata><OCreationDate>'+str(OCreationDate)+'</OCreationDate></metadata>'
+    '''
+
+    xmlData ='<metadata><OCreationDate>1616428511</OCreationDate><OLastPlayedDate>1643666400</OLastPlayedDate><OPlays>9</OPlays></metadata>'
+    print(xmlData)
 
     metadataObjectType= KalturaMetadataObjectType.ENTRY
     filterEntry= KalturaMetadataFilter()
@@ -95,20 +102,23 @@ def updateOCDandOLPD(entry_id,OCreationDate,OLastPlayedDate, OPlays):
             metadata_pid = obj.id
     try:
         if(checked == True):
-            client.metadata.metadata.update(metadata_pid, xmlData)
+            result=client.metadata.metadata.update(metadata_pid,xmlData)
+            pprint(vars(result))
             logging.info(entry_id+ " has been updated with a new custom schema")
         else:
-            client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlData)
+            result=client.metadata.metadata.add(metadata_pid,metadataObjectType,entry_id,xmlData)
+            pprint(vars(result))            
             logging.info(entry_id + " has been assigned a custom schema") 
     except Exception as Argument:
-            logging.error(str(entry_id)+","+str(Argument))
+        logging.error(str(entry_id)+","+str(Argument))
+    
 
 #For Testing purposes:
 def getMetaData():
     metadata_pid = key.metadata_profile_id
     metadataObjectType= KalturaMetadataObjectType.ENTRY
     filterEntry= KalturaMetadataFilter()
-    filterEntry.objectIdEqual = "0_lxezfr94"
+    filterEntry.objectIdEqual = "0_9ntue2if"
     metaData= client.metadata.metadata.list(filterEntry)
     for obj in metaData.objects:
         pprint(vars(obj))
@@ -120,16 +130,15 @@ def doDataProcess(result):
         try:
             #totalNumOfSubsetEntries += 1
             if(obj.lastPlayedAt is not None and obj.plays is not None):
-                #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
-                #testing(obj.id,obj.createdAt,obj.lastPlayedAt,obj.plays)
+                print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +"," +str(obj.lastPlayedAt)+ ","+str(obj.plays))
                 updateOCDandOLPD(obj.id,obj.createdAt,obj.lastPlayedAt,obj.plays) 
             else:
-                #Store OPlays if not Null
-                if(obj.plays is not None):
-                    #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null"+ ","+str(obj.plays))
+                ##########Store OPlays if not Null BUT IT COULD BE ZERO
+                if(obj.plays is not None):########
+                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null"+ ","+str(obj.plays))
                     updateOCDandOLPD(obj.id,obj.createdAt,NULL,obj.plays)
                 else:
-                    #print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
+                    print(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
                     updateOCDandOLPD(obj.id,obj.createdAt,NULL,NULL)
                 #updateOCDandOLPD(obj.id,obj.createdAt,NULL)
                 #logging.info(str(obj.id) + ","+ str(obj.userId)+"," + str(obj.createdAt) +",null, null")
@@ -181,5 +190,7 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    #main()
     #print(str(getTotalCount()))
+    getMetaData()
+    #updateOCDandOLPD('0_9ntue2if','1616428511','1643666400','9')
